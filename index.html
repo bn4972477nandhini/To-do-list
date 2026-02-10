@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Full Screen To-Do </title>
+<title>Full Screen To-Do App with Time</title>
 
 <style>
 :root{
@@ -15,6 +15,7 @@
   --low:#22c55e;
   --medium:#f59e0b;
   --high:#ef4444;
+  --overdue:#dc2626;
 }
 
 *{
@@ -36,8 +37,6 @@ body{
   background:var(--sidebar);
   color:white;
   padding:24px;
-  display:flex;
-  flex-direction:column;
 }
 
 .sidebar h2{
@@ -78,7 +77,6 @@ body{
 
 .header h1{
   font-size:28px;
-  color:var(--text);
 }
 
 #count{
@@ -88,7 +86,7 @@ body{
 /* ADD TASK */
 .add{
   display:grid;
-  grid-template-columns:1fr 160px 140px 140px;
+  grid-template-columns:1fr 140px 120px 120px 140px;
   gap:12px;
   margin-bottom:30px;
 }
@@ -114,7 +112,7 @@ body{
 /* TASK GRID */
 .tasks{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
   gap:18px;
 }
 
@@ -131,6 +129,10 @@ body{
 .task.completed{
   opacity:.6;
   text-decoration:line-through;
+}
+
+.task.overdue{
+  border-left:6px solid var(--overdue);
 }
 
 .task h3{
@@ -150,7 +152,7 @@ body{
   font-size:12px;
   font-weight:600;
   color:white;
-  margin-top:6px;
+  margin-top:8px;
 }
 
 .low{background:var(--low);}
@@ -185,7 +187,7 @@ body{
   </div>
 </div>
 
-<!-- MAIN CONTENT -->
+<!-- MAIN -->
 <div class="main">
   <div class="header">
     <h1>My To-Do Dashboard</h1>
@@ -195,6 +197,7 @@ body{
   <div class="add">
     <input id="title" placeholder="Task title">
     <input type="date" id="date">
+    <input type="time" id="time">
     <select id="priority">
       <option value="low">Low</option>
       <option value="medium">Medium</option>
@@ -213,22 +216,29 @@ let filter = "active";
 
 window.onload = render;
 
+// ADD TASK
 function addTask(){
   const title = document.getElementById("title").value.trim();
   const date = document.getElementById("date").value;
+  const time = document.getElementById("time").value;
   const priority = document.getElementById("priority").value;
+
   if(!title) return;
 
   const tasks = getTasks();
-  tasks.push({title,date,priority,done:false});
+  tasks.push({ title, date, time, priority, done:false });
   save(tasks);
+
   document.getElementById("title").value="";
+  document.getElementById("time").value="";
   render();
 }
 
+// RENDER
 function render(){
   list.innerHTML="";
   const tasks = getTasks();
+  const now = new Date();
 
   tasks.forEach((t,i)=>{
     if(filter==="active" && t.done) return;
@@ -238,10 +248,18 @@ function render(){
     card.className = "task";
     if(t.done) card.classList.add("completed");
 
+    // overdue logic
+    if(!t.done && t.date){
+      const due = new Date(`${t.date}T${t.time || "23:59"}`);
+      if(due < now) card.classList.add("overdue");
+    }
+
     card.innerHTML = `
       <div>
         <h3>${t.title}</h3>
-        <div class="meta">${t.date || "No date"}</div>
+        <div class="meta">
+          ${t.date || "No date"} ${t.time || ""}
+        </div>
         <span class="badge ${t.priority}">${t.priority}</span>
       </div>
       <div class="actions">
@@ -250,12 +268,14 @@ function render(){
         <button onclick="removeTask(${i})">🗑</button>
       </div>
     `;
+
     list.appendChild(card);
   });
 
   count.innerText = `${tasks.filter(t=>!t.done).length} active tasks`;
 }
 
+// COMPLETE
 function complete(i){
   const t = getTasks();
   t[i].done = true;
@@ -263,6 +283,7 @@ function complete(i){
   render();
 }
 
+// EDIT
 function edit(i){
   const t = getTasks();
   const text = prompt("Edit task", t[i].title);
@@ -273,6 +294,7 @@ function edit(i){
   }
 }
 
+// DELETE
 function removeTask(i){
   const t = getTasks();
   t.splice(i,1);
@@ -280,6 +302,7 @@ function removeTask(i){
   render();
 }
 
+// FILTER
 function setFilter(f,btn){
   filter = f;
   document.querySelectorAll(".nav button")
@@ -288,8 +311,9 @@ function setFilter(f,btn){
   render();
 }
 
-function save(t){localStorage.setItem("tasks",JSON.stringify(t));}
-function getTasks(){return JSON.parse(localStorage.getItem("tasks"))||[];}
+// STORAGE
+function save(t){ localStorage.setItem("tasks",JSON.stringify(t)); }
+function getTasks(){ return JSON.parse(localStorage.getItem("tasks")) || []; }
 </script>
 
 </body>
