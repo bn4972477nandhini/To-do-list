@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Full Screen To-Do App with From–To Time</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professional To-Do Dashboard</title>
 
 <style>
 :root{
@@ -10,7 +11,6 @@
   --bg:#f1f5f9;
   --sidebar:#0f172a;
   --card:#ffffff;
-  --text:#0f172a;
   --muted:#64748b;
   --low:#22c55e;
   --medium:#f59e0b;
@@ -25,8 +25,9 @@
   font-family:Inter,system-ui,sans-serif;
 }
 
+/* LAYOUT */
 body{
-  height:100vh;
+  min-height:100vh;
   background:var(--bg);
   display:grid;
   grid-template-columns:260px 1fr;
@@ -49,7 +50,6 @@ body{
   border:none;
   color:#cbd5f5;
   text-align:left;
-  font-size:15px;
   border-radius:8px;
   cursor:pointer;
 }
@@ -71,9 +71,10 @@ body{
   justify-content:space-between;
   align-items:center;
   margin-bottom:25px;
+  flex-wrap:wrap;
+  gap:10px;
 }
 
-.header h1{ font-size:28px; }
 #count{ color:var(--muted); }
 
 /* ADD TASK */
@@ -89,7 +90,6 @@ body{
   padding:14px;
   border-radius:12px;
   border:1px solid #e2e8f0;
-  font-size:15px;
 }
 
 .add button{
@@ -97,7 +97,6 @@ body{
   border-radius:12px;
   background:var(--primary);
   color:white;
-  font-size:15px;
   font-weight:600;
   cursor:pointer;
 }
@@ -114,9 +113,6 @@ body{
   border-radius:18px;
   padding:18px;
   box-shadow:0 10px 25px rgba(0,0,0,.08);
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
 }
 
 .task.completed{
@@ -128,24 +124,17 @@ body{
   border-left:6px solid var(--overdue);
 }
 
-.task h3{
-  font-size:16px;
-  margin-bottom:8px;
-}
-
 .meta{
   font-size:13px;
   color:var(--muted);
+  margin:5px 0;
 }
 
 .badge{
-  display:inline-block;
   padding:4px 10px;
   border-radius:999px;
   font-size:12px;
-  font-weight:600;
   color:white;
-  margin-top:8px;
 }
 
 .low{background:var(--low);}
@@ -153,17 +142,64 @@ body{
 .high{background:var(--high);}
 
 .actions{
-  margin-top:14px;
+  margin-top:12px;
   display:flex;
   justify-content:flex-end;
   gap:10px;
 }
 
 .actions button{
-  background:none;
   border:none;
+  background:none;
   font-size:18px;
   cursor:pointer;
+}
+
+/* TABLET */
+@media (max-width:1024px){
+  body{ grid-template-columns:200px 1fr; }
+
+  .add{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .add button{
+    grid-column:span 2;
+  }
+}
+
+/* MOBILE */
+@media (max-width:768px){
+
+  body{
+    grid-template-columns:1fr;
+    grid-template-rows:auto 1fr;
+  }
+
+  .sidebar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px;
+  }
+
+  .nav{
+    display:flex;
+    gap:10px;
+  }
+
+  .nav button{
+    margin:0;
+    padding:8px 12px;
+  }
+
+  .add{
+    grid-template-columns:1fr;
+  }
+
+  .tasks{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
@@ -176,7 +212,7 @@ body{
   <div class="nav">
     <button class="active" onclick="setFilter('active',this)">Active</button>
     <button onclick="setFilter('completed',this)">Completed</button>
-    <button onclick="setFilter('all',this)">All Tasks</button>
+    <button onclick="setFilter('all',this)">All</button>
   </div>
 </div>
 
@@ -192,11 +228,13 @@ body{
     <input type="date" id="date">
     <input type="time" id="fromTime">
     <input type="time" id="toTime">
+
     <select id="priority">
       <option value="low">Low</option>
       <option value="medium">Medium</option>
       <option value="high">High</option>
     </select>
+
     <button onclick="addTask()">Add Task</button>
   </div>
 
@@ -204,24 +242,24 @@ body{
 </div>
 
 <script>
-const list = document.getElementById("list");
-const count = document.getElementById("count");
-let filter = "active";
+const list=document.getElementById("list");
+const count=document.getElementById("count");
+let filter="active";
 
-window.onload = render;
+window.onload=render;
 
-// ADD TASK
+/* ADD TASK */
 function addTask(){
-  const title = document.getElementById("title").value.trim();
-  const date = document.getElementById("date").value;
-  const fromTime = document.getElementById("fromTime").value;
-  const toTime = document.getElementById("toTime").value;
-  const priority = document.getElementById("priority").value;
+  const title=document.getElementById("title").value.trim();
+  const date=document.getElementById("date").value;
+  const fromTime=document.getElementById("fromTime").value;
+  const toTime=document.getElementById("toTime").value;
+  const priority=document.getElementById("priority").value;
 
-  if(!title || !fromTime || !toTime) return alert("Fill all fields");
+  if(!title||!fromTime||!toTime) return alert("Fill all fields");
 
-  const tasks = getTasks();
-  tasks.push({ title, date, fromTime, toTime, priority, done:false });
+  const tasks=getTasks();
+  tasks.push({title,date,fromTime,toTime,priority,done:false});
   save(tasks);
 
   document.getElementById("title").value="";
@@ -230,36 +268,32 @@ function addTask(){
   render();
 }
 
-// RENDER
+/* RENDER */
 function render(){
   list.innerHTML="";
-  const tasks = getTasks();
-  const now = new Date();
+  const tasks=getTasks();
+  const now=new Date();
 
   tasks.forEach((t,i)=>{
-    if(filter==="active" && t.done) return;
-    if(filter==="completed" && !t.done) return;
+    if(filter==="active"&&t.done) return;
+    if(filter==="completed"&&!t.done) return;
 
-    const card = document.createElement("div");
-    card.className = "task";
+    const card=document.createElement("div");
+    card.className="task";
     if(t.done) card.classList.add("completed");
 
-    // overdue logic (uses TO time)
     if(!t.done && t.date){
-      const due = new Date(`${t.date}T${t.toTime}`);
-      if(due < now) card.classList.add("overdue");
+      const due=new Date(`${t.date}T${t.toTime}`);
+      if(due<now) card.classList.add("overdue");
     }
 
-    card.innerHTML = `
-      <div>
-        <h3>${t.title}</h3>
-        <div class="meta">
-          ${t.date || "No date"} • ${t.fromTime} → ${t.toTime}
-        </div>
-        <span class="badge ${t.priority}">${t.priority}</span>
-      </div>
+    card.innerHTML=`
+      <h3>${t.title}</h3>
+      <div class="meta">${t.date||"No date"} • ${t.fromTime} → ${t.toTime}</div>
+      <span class="badge ${t.priority}">${t.priority}</span>
+
       <div class="actions">
-        ${!t.done ? `<button onclick="complete(${i})">✔</button>` : ""}
+        ${!t.done?`<button onclick="complete(${i})">✔</button>`:""}
         <button onclick="edit(${i})">✏</button>
         <button onclick="removeTask(${i})">🗑</button>
       </div>
@@ -268,48 +302,47 @@ function render(){
     list.appendChild(card);
   });
 
-  count.innerText = `${tasks.filter(t=>!t.done).length} active tasks`;
+  count.innerText=`${tasks.filter(t=>!t.done).length} active tasks`;
 }
 
-// COMPLETE
+/* COMPLETE */
 function complete(i){
-  const t = getTasks();
-  t[i].done = true;
+  const t=getTasks();
+  t[i].done=true;
   save(t);
   render();
 }
 
-// EDIT
+/* EDIT */
 function edit(i){
-  const t = getTasks();
-  const text = prompt("Edit task", t[i].title);
+  const t=getTasks();
+  const text=prompt("Edit task",t[i].title);
   if(text){
-    t[i].title = text;
+    t[i].title=text;
     save(t);
     render();
   }
 }
 
-// DELETE
+/* DELETE */
 function removeTask(i){
-  const t = getTasks();
+  const t=getTasks();
   t.splice(i,1);
   save(t);
   render();
 }
 
-// FILTER
+/* FILTER */
 function setFilter(f,btn){
-  filter = f;
-  document.querySelectorAll(".nav button")
-    .forEach(b=>b.classList.remove("active"));
+  filter=f;
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   render();
 }
 
-// STORAGE
-function save(t){ localStorage.setItem("tasks",JSON.stringify(t)); }
-function getTasks(){ return JSON.parse(localStorage.getItem("tasks")) || []; }
+/* STORAGE */
+function save(t){localStorage.setItem("tasks",JSON.stringify(t));}
+function getTasks(){return JSON.parse(localStorage.getItem("tasks"))||[];}
 </script>
 
 </body>
